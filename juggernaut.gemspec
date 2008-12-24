@@ -2,14 +2,13 @@ Gem::Specification.new do |s|
   s.name = 'juggernaut'
   s.authors = ['Alex MacCaw']
   s.email = 'info@eribium.org'
-  s.version  = "0.5.7.1"
+  s.version  = "0.5.7.2"
   s.date     = "2008-12-24"
   s.summary  = "Juggernaut"
   s.bindir = "bin"
   s.files    = [
 		"README.txt", 
 		"Manifest.txt", 
-		"Rakefile", 
 		"Rakefile", 
 		"juggernaut.gemspec",
 		"lib/juggernaut.rb",
