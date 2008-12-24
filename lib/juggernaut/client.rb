@@ -1,12 +1,18 @@
 require 'timeout'
 require 'net/http'
 require 'uri'
+require 'openssl'
+require 'base64'
+require 'cgi'
+
 module Juggernaut
   class Client
     include Juggernaut::Miscel
     
+    class UnverifiedClient < Juggernaut::JuggernautError #:nodoc:
+    end
+    
      attr_reader   :id
-     attr_accessor :session_id
      attr_reader   :connections
      @@clients = []
 
@@ -14,13 +20,14 @@ module Juggernaut
        # Actually does a find_or_create_by_id
        def find_or_create(subscriber, request)
          if client = find_by_id(request[:client_id])
-           client.session_id = request[:session_id]
            client.add_new_connection(subscriber)
+           client.authenticate(request)
            client
          else
            self.new(subscriber, request)
          end
        end
+
 
        def add_client(client)
          @@clients << client unless @@clients.include?(client)
@@ -79,14 +86,21 @@ module Juggernaut
      def initialize(subscriber, request)
        @connections = []
        @id         = request[:client_id]
-       @session_id = request[:session_id]
+       self.authenticate(request)
        add_new_connection(subscriber)
+     end
+
+     def authenticate(request)
+       time = request[:time]
+       nonce = request[:nonce]
+       hmac = Base64.decode64(CGI.unescape(request[:hash]))
+       calculated_hmac = OpenSSL::HMAC.digest(OpenSSL::Digest::SHA1.new, @id, "394I583098UU9EIJOZFI90U34894982823982348943:#{time}:#{nonce}:#{@id}")
+       raise UnverifiedClient unless hmac == calculated_hmac
      end
 
      def to_json
        {
          :client_id  => @id, 
-         :session_id => @session_id
        }.to_json
      end
 
@@ -145,7 +159,6 @@ module Juggernaut
        uri.path = '/' if uri.path == ''
        params = []
        params << "client_id=#{id}" if id
-       params << "session_id=#{session_id}" if session_id
        channels.each {|chan| params << "channels[]=#{chan}" }
        headers = {"User-Agent" => "Ruby/#{RUBY_VERSION}"}
        begin
