@@ -94,7 +94,7 @@ module Juggernaut
        time = request[:time]
        nonce = request[:nonce]
        hmac = Base64.decode64(CGI.unescape(request[:hash]))
-       calculated_hmac = OpenSSL::HMAC.digest(OpenSSL::Digest::SHA1.new, @id, "394I583098UU9EIJOZFI90U34894982823982348943:#{time}:#{nonce}:#{@id}")
+       calculated_hmac = OpenSSL::HMAC.digest(OpenSSL::Digest::SHA1.new, @id, "#{options[:client_secret_key]}:#{time}:#{nonce}:#{@id}")
        raise UnverifiedClient unless hmac == calculated_hmac
      end
 
